@@ -2,11 +2,12 @@
 """
     将cifar10的data_batch_12345 转换成 png格式的图片
     每个类别单独存放在一个文件夹，文件夹名称为0-9
+    新手试用
 """
 from scipy.misc import imsave
 import numpy as np
 import os
-import pickle
+import pickle                                 
 
 
 data_dir = os.path.join("..", "..", "Data", "cifar-10-batches-py")          //构建文件相对地址:os.path.join("","")
