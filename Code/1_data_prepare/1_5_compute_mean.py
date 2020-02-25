@@ -24,21 +24,21 @@ with open(train_txt_path, 'r') as f:
     random.shuffle(lines)   # shuffle , 随机挑选图片
 
     for i in range(CNum):
-        img_path = lines[i].rstrip().split()[0]
+        img_path = lines[i].rstrip().split()[0]         # 去掉字符串末尾的换行符，然后以空格分割字符串，获取图片本地存储地址
 
-        img = cv2.imread(img_path)
-        img = cv2.resize(img, (img_h, img_w))
+        img = cv2.imread(img_path)      #cv2库里面的imread读取图片
+        img = cv2.resize(img, (img_h, img_w))   #cv.resize(img,(h,w))将图片数据变成特定高度和长度
 
-        img = img[:, :, :, np.newaxis]
-        imgs = np.concatenate((imgs, img), axis=3)
+        img = img[:, :, :, np.newaxis]      # 在相应位置上增加一个维度，这里维度（x,x,x,1)
+        imgs = np.concatenate((imgs, img), axis=3)      # np.concatenate(元组，axis=0) 数组拼接函数，默认维度为0
         print(i)
 
-imgs = imgs.astype(np.float32)/255.
+imgs = imgs.astype(np.float32)/255.         # array.astype(np.float32) 将数据转化为32位浮点型数据
 
 
 for i in range(3):
     pixels = imgs[:,:,i,:].ravel()  # 拉成一行
-    means.append(np.mean(pixels))
+    means.append(np.mean(pixels))   
     stdevs.append(np.std(pixels))
 
 means.reverse() # BGR --> RGB
