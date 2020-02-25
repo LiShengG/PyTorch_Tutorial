@@ -8,13 +8,13 @@ import os
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
+import torch.optim as optim     
 import sys
-sys.path.append("..")
+sys.path.append("..")           # 将当前目录的上级目录添加进文件搜索目录
 from utils.utils import MyDataset, validate, show_confMat
 from datetime import datetime
 
-train_txt_path = os.path.join("..", "..", "Data", "train.txt")
+train_txt_path = os.path.join("..", "..", "Data", "train.txt")      # 训练集的地址
 valid_txt_path = os.path.join("..", "..", "Data", "valid.txt")
 
 classes_name = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
@@ -28,23 +28,23 @@ max_epoch = 1
 result_dir = os.path.join("..", "..", "Result")
 
 now_time = datetime.now()
-time_str = datetime.strftime(now_time, '%m-%d_%H-%M-%S')
+time_str = datetime.strftime(now_time, '%m-%d_%H-%M-%S')        #显示当前时间
 
-log_dir = os.path.join(result_dir, time_str)
+log_dir = os.path.join(result_dir, time_str)    
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
 # -------------------------------------------- step 1/5 : 加载数据 -------------------------------------------
 
 # 数据预处理设置
-normMean = [0.4948052, 0.48568845, 0.44682974]
-normStd = [0.24580306, 0.24236229, 0.2603115]
-normTransform = transforms.Normalize(normMean, normStd)
-trainTransform = transforms.Compose([
-    transforms.Resize(32),
-    transforms.RandomCrop(32, padding=4),
-    transforms.ToTensor(),
-    normTransform
+normMean = [0.4948052, 0.48568845, 0.44682974]      # 设置预处理时图像均值
+normStd = [0.24580306, 0.24236229, 0.2603115]       # 设置方差 
+normTransform = transforms.Normalize(normMean, normStd)     #  对数据按通道进行标准化，即先减均值，再除以标准差，注意是 chw
+trainTransform = transforms.Compose([           # 由transform构成的列表.用于图像预处理时的一系列处理，这里依次是
+    transforms.Resize(32),                      # 重置图像分辨率
+    transforms.RandomCrop(32, padding=4),       # 依据给定的size随机裁剪
+    transforms.ToTensor(),                      # 将PIL Image或者 ndarray 转换为tensor，并且归一化至[0-1]
+    normTransform                           # 对数据按通道进行标准化
 ])
 
 validTransform = transforms.Compose([
@@ -53,24 +53,24 @@ validTransform = transforms.Compose([
 ])
 
 # 构建MyDataset实例
-train_data = MyDataset(txt_path=train_txt_path, transform=trainTransform)
+train_data = MyDataset(txt_path=train_txt_path, transform=trainTransform)       
 valid_data = MyDataset(txt_path=valid_txt_path, transform=validTransform)
 
 # 构建DataLoder
-train_loader = DataLoader(dataset=train_data, batch_size=train_bs, shuffle=True)
+train_loader = DataLoader(dataset=train_data, batch_size=train_bs, shuffle=True)    # shuffle = True打乱数据顺序
 valid_loader = DataLoader(dataset=valid_data, batch_size=valid_bs)
 
 # ------------------------------------ step 2/5 : 定义网络 ------------------------------------
 
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
+class Net(nn.Module):         # 定义网络
+    def __init__(self):             # 初始化函数
+        super(Net, self).__init__()     # 初始化父类
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool1 = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.pool2 = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)       # 全连接层
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
@@ -84,16 +84,16 @@ class Net(nn.Module):
         return x
 
     # 定义权值初始化
-    def initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                torch.nn.init.xavier_normal_(m.weight.data)
+    def initialize_weights(self):       # 初始化数据
+        for m in self.modules():        # 遍历每个模块分别初始化
+            if isinstance(m, nn.Conv2d):       #   如果是nn.Conv2d模块 ，则执行下面的代码
+                torch.nn.init.xavier_normal_(m.weight.data)     # 初始化，下划线表示在执行相应操作后，直接覆盖原来的数据
                 if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
+                    m.bias.data.zero_()         # 初始化偏执为零
+            elif isinstance(m, nn.BatchNorm2d): # 如果模块是nn.BatchNorm2d
+                m.weight.data.fill_(1)          # 权重设置为1
+                m.bias.data.zero_()             # 初始化偏执为零
+            elif isinstance(m, nn.Linear):      # 如果是全连接层
                 torch.nn.init.normal_(m.weight.data, 0, 0.01)
                 m.bias.data.zero_()
 
@@ -105,7 +105,7 @@ net = Net()     # 创建一个网络
 # ================================ #
 
 # load params
-pretrained_dict = torch.load('net_params.pkl')
+pretrained_dict = torch.load('net_params.pkl')      # 加载预训练模型参数
 
 # 获取当前网络的dict
 net_state_dict = net.state_dict()
@@ -151,17 +151,17 @@ for epoch in range(max_epoch):
         inputs, labels = Variable(inputs), Variable(labels)
 
         # forward, backward, update weights
-        optimizer.zero_grad()
-        outputs = net(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+        optimizer.zero_grad()       # 梯度清空
+        outputs = net(inputs)      # 前向传播
+        loss = criterion(outputs, labels)   #计算误差
+        loss.backward()             # 反向传播  
+        optimizer.step()            # 更新参数
 
         # 统计预测信息
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).squeeze().sum().numpy()
-        loss_sigma += loss.item()
+        _, predicted = torch.max(outputs.data, 1)   # 获取网络推测结构
+        total += labels.size(0)                     # 统计总共参与推测的图片数量
+        correct += (predicted == labels).squeeze().sum().numpy()    # 统计模型推测的正确的结果数量
+        loss_sigma += loss.item()                   
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
         if i % 10 == 9:
@@ -183,7 +183,7 @@ for epoch in range(max_epoch):
 
         # forward
         outputs = net(images)
-        outputs.detach_()
+        outputs.detach_() # 切断反向传播
 
         # 计算loss
         loss = criterion(outputs, labels)
